@@ -1,15 +1,9 @@
-#-------------------------------------------------
-#
-# Project created by QtCreator 2016-12-11T11:12:29
-#
-#-------------------------------------------------
-
 QT       += network
-
 QT       -= gui
 
 TARGET = QFtpServerLib
 TEMPLATE = lib
+CONFIG += c++14
 
 DEFINES += QFTPSERVERLIB_LIBRARY
 

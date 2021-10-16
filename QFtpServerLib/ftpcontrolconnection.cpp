@@ -15,49 +15,53 @@
 #include <QTimer>
 #include <QSslSocket>
 
-FtpControlConnection::FtpControlConnection(QObject *parent, QSslSocket *socket, const QString &rootPath, const QString &userName, const QString &password, bool readOnly) :
-    QObject(parent)
+FtpControlConnection::FtpControlConnection(QObject *parent,
+                                           QSslSocket *socket,
+                                           const QString &rootPath,
+                                           const QString &userName,
+                                           const QString &password,
+                                           bool readOnly)
+    : QObject(parent)
+    , _socket(socket)
+    , _dataConnection(new DataConnection(this))
+    , _userName(userName)
+    , _password(password)
+    , _currentDirectory("/")
+    , _lastProcessedCommand()
+    , _rootPath(rootPath)
+    , _encryptDataConnection(false)
+    , _isLoggedIn(false)
+    , _readOnly(readOnly)
+
 {
-    this->socket = socket;
-    this->userName = userName;
-    this->password = password;
-    this->rootPath = rootPath;
-    this->readOnly = readOnly;
-    isLoggedIn = false;
-    encryptDataConnection = false;
     socket->setParent(this);
     connect(socket, SIGNAL(readyRead()), this, SLOT(acceptNewData()));
     connect(socket, SIGNAL(disconnected()), this, SLOT(deleteLater()));
-    currentDirectory = "/";
-    dataConnection = new DataConnection(this);
     reply("220 Welcome to QFtpServer.");
 }
 
-FtpControlConnection::~FtpControlConnection()
-{
-}
 
 void FtpControlConnection::acceptNewData()
 {
-    if (!socket->canReadLine()) {
+    if (!_socket->canReadLine()) {
         return;
     }
 
     // Note how we execute only one line, and use QTimer::singleShot, instead
     // of using a for-loop until no more lines are available. This is done
     // so we don't block the event loop for a long time.
-    processCommand(QString::fromUtf8(socket->readLine()).trimmed());
+    processCommand(QString::fromUtf8(_socket->readLine()).trimmed());
     QTimer::singleShot(0, this, SLOT(acceptNewData()));
 }
 
 void FtpControlConnection::disconnectFromHost()
 {
-    socket->disconnectFromHost();
+    _socket->disconnectFromHost();
 }
 
 bool FtpControlConnection::verifyAuthentication(const QString &command)
 {
-    if (isLoggedIn) {
+    if (_isLoggedIn) {
         return true;
     }
 
@@ -79,7 +83,7 @@ bool FtpControlConnection::verifyAuthentication(const QString &command)
 
 bool FtpControlConnection::verifyWritePermission(const QString &command)
 {
-    if (!readOnly) {
+    if (!_readOnly) {
         return true;
     }
 
@@ -130,7 +134,7 @@ QString FtpControlConnection::toLocalPath(const QString &fileName) const
 
     // If this is a relative path, we prepend the current directory.
     if (!localPath.startsWith('/')) {
-        localPath = currentDirectory + '/' + localPath;
+        localPath = _currentDirectory + '/' + localPath;
     }
 
     // Evaluate all the ".." and ".", "/path/././to/dir/../.." becomes "/path".
@@ -148,7 +152,7 @@ QString FtpControlConnection::toLocalPath(const QString &fileName) const
     }
 
     // Prepend the root path.
-    localPath = QDir::cleanPath(rootPath + '/' + components.join("/"));
+    localPath = QDir::cleanPath(_rootPath + '/' + components.join("/"));
 
     qDebug() << "to local path" << fileName << "->" << localPath;
     return localPath;
@@ -157,7 +161,7 @@ QString FtpControlConnection::toLocalPath(const QString &fileName) const
 void FtpControlConnection::reply(const QString &replyCode)
 {
     qDebug() << "reply" << replyCode;
-    socket->write((replyCode + "\r\n").toUtf8());
+    _socket->write((replyCode + "\r\n").toUtf8());
 }
 
 void FtpControlConnection::processCommand(const QString &entireCommand)
@@ -187,7 +191,7 @@ void FtpControlConnection::processCommand(const QString &entireCommand)
     } else if ("FEAT" == command) {
         feat();
     } else if ("PWD" == command) {
-        reply(QString("257 \"%1\"").arg(currentDirectory));
+        reply(QString("257 \"%1\"").arg(_currentDirectory));
     } else if ("CWD" == command) {
         cwd(commandParameters);
     } else if ("TYPE" == command) {
@@ -236,14 +240,14 @@ void FtpControlConnection::processCommand(const QString &entireCommand)
         reply("502 Command not implemented.");
     }
 
-    lastProcessedCommand = entireCommand;
+    _lastProcessedCommand = entireCommand;
 }
 
 void FtpControlConnection::startOrScheduleCommand(FtpCommand *ftpCommand)
 {
     connect(ftpCommand, SIGNAL(reply(QString)), this, SLOT(reply(QString)));
 
-    if (!dataConnection->setFtpCommand(ftpCommand)) {
+    if (!_dataConnection->setFtpCommand(ftpCommand)) {
         delete ftpCommand;
         reply("425 Can't open data connection.");
         return;
@@ -260,14 +264,14 @@ void FtpControlConnection::port(const QString &addressAndPort)
     exp.indexIn(addressAndPort);
     QString hostName = exp.cap(1).replace(',', '.');
     int port = exp.cap(2).toInt() * 256 + exp.cap(3).toInt();
-    dataConnection->scheduleConnectToHost(hostName, port, encryptDataConnection);
+    _dataConnection->scheduleConnectToHost(hostName, port, _encryptDataConnection);
     reply("200 Command okay.");
 }
 
 void FtpControlConnection::pasv()
 {
-    int port = dataConnection->listen(encryptDataConnection);
-    reply(QString("227 Entering Passive Mode (%1,%2,%3).").arg(socket->localAddress().toString().replace('.',',')).arg(port/256).arg(port%256));
+    int port = _dataConnection->listen(_encryptDataConnection);
+    reply(QString("227 Entering Passive Mode (%1,%2,%3).").arg(_socket->localAddress().toString().replace('.',',')).arg(port/256).arg(port%256));
 }
 
 void FtpControlConnection::list(const QString &dir, bool nameListOnly)
@@ -291,9 +295,9 @@ void FtpControlConnection::cwd(const QString &dir)
     if (fi.exists() && fi.isDir()) {
         QFileInfo fi(dir);
         if (fi.isAbsolute()) {
-            currentDirectory = QDir::cleanPath(dir);
+            _currentDirectory = QDir::cleanPath(dir);
         } else {
-            currentDirectory = QDir::cleanPath(currentDirectory + '/' + dir);
+            _currentDirectory = QDir::cleanPath(_currentDirectory + '/' + dir);
         }
         reply("250 Requested file action okay, completed.");
     } else {
@@ -332,7 +336,7 @@ void FtpControlConnection::rnto(const QString &fileName)
 {
     QString command;
     QString commandParameters;
-    parseCommand(lastProcessedCommand, &command, &commandParameters);
+    parseCommand(_lastProcessedCommand, &command, &commandParameters);
     if ("RNFR" == command && QDir().rename(toLocalPath(commandParameters), fileName)) {
         reply("250 Requested file action okay, completed.");
     } else {
@@ -345,8 +349,8 @@ void FtpControlConnection::quit()
     reply("221 Quitting...");
     // If we have a running download or upload, we will wait until it's
     // finished before closing the control connection.
-    if (dataConnection->ftpCommand()) {
-        connect(dataConnection->ftpCommand(), SIGNAL(destroyed()), this, SLOT(disconnectFromHost()));
+    if (_dataConnection->ftpCommand()) {
+        connect(_dataConnection->ftpCommand(), SIGNAL(destroyed()), this, SLOT(disconnectFromHost()));
     } else {
         disconnectFromHost();
     }
@@ -366,10 +370,10 @@ void FtpControlConnection::pass(const QString &password)
 {
     QString command;
     QString commandParameters;
-    parseCommand(lastProcessedCommand, &command, &commandParameters);
-    if (this->password.isEmpty() || ("USER" == command && this->userName == commandParameters && this->password == password)) {
+    parseCommand(_lastProcessedCommand, &command, &commandParameters);
+    if (this->_password.isEmpty() || ("USER" == command && this->_userName == commandParameters && this->_password == password)) {
         reply("230 You are logged in.");
-        isLoggedIn = true;
+        _isLoggedIn = true;
     } else {
         reply("530 User name or password was incorrect.");
     }
@@ -378,16 +382,16 @@ void FtpControlConnection::pass(const QString &password)
 void FtpControlConnection::auth()
 {
     reply("234 Initializing SSL connection.");
-    SslServer::setLocalCertificateAndPrivateKey(socket);
-    socket->startServerEncryption();
+    SslServer::setLocalCertificateAndPrivateKey(_socket);
+    _socket->startServerEncryption();
 }
 
 void FtpControlConnection::prot(const QString &protectionLevel)
 {
     if ("C" == protectionLevel) {
-        encryptDataConnection = false;
+        _encryptDataConnection = false;
     } else if ("P" == protectionLevel) {
-        encryptDataConnection = true;
+        _encryptDataConnection = true;
     } else {
         reply("502 Command not implemented.");
         return;
@@ -397,7 +401,7 @@ void FtpControlConnection::prot(const QString &protectionLevel)
 
 void FtpControlConnection::cdup()
 {
-    if ("/" == currentDirectory) {
+    if ("/" == _currentDirectory) {
         reply("250 Requested file action okay, completed.");
     } else {
         cwd("..");
@@ -409,7 +413,7 @@ void FtpControlConnection::feat()
     // We only report that we support UTF8 file names, this is needed because
     // some clients will assume that we use ASCII otherwise, and will not
     // encode the filenames properly.
-    socket->write(
+    _socket->write(
         "211-Features:\r\n"
         " UTF8\r\n"
         "211 End\r\n"
@@ -421,7 +425,7 @@ qint64 FtpControlConnection::seekTo()
     qint64 seekTo = 0;
     QString command;
     QString commandParameters;
-    parseCommand(lastProcessedCommand, &command, &commandParameters);
+    parseCommand(_lastProcessedCommand, &command, &commandParameters);
     if ("REST" == command) {
         QTextStream(commandParameters.toUtf8()) >> seekTo;
     }

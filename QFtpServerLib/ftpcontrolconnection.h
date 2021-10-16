@@ -17,10 +17,7 @@ class FtpControlConnection : public QObject
 {
     Q_OBJECT
 public:
-    explicit FtpControlConnection(QObject *parent, QSslSocket *socket, const QString &rootPath, const QString &userName = QString(), const QString &password = QString(), bool readOnly = false);
-    ~FtpControlConnection();
-
-signals:
+    FtpControlConnection(QObject *parent, QSslSocket *_socket, const QString &_rootPath, const QString &_userName = QString(), const QString &_password = QString(), bool _readOnly = false);
 
 public slots:
     // Slot used by the data connection handlers to send messages to the FTP
@@ -82,7 +79,7 @@ private:
     // Returns the size of the file.
     void size(const QString &fileName);
     // Enters the password.
-    void pass(const QString &password);
+    void pass(const QString &_password);
     // The client instructs the server to switch to FTPS.
     void auth();
     // Set protection level.
@@ -95,26 +92,40 @@ private:
     // allows to the client to continue partially downloaded/uploaded files.
     qint64 seekTo();
     // The TCP (or SSL) socket of the control connection.
-    QSslSocket *socket;
+
+private:
+
+    QSslSocket *_socket;
+
+    DataConnection *_dataConnection;
+
+    // The username that the FTP server expects.
+    QString _userName;
+
+    // The password that the FTP server expects.
+    QString _password;
+
     // The current directory (i.e. CD) of the FTP server. Used for relative
     // paths.
-    QString currentDirectory;
+    QString _currentDirectory;
+
     // Some commands depend on the previous command (for example RNFR/RNTO,
     // REST/STOR, etc.).
-    QString lastProcessedCommand;
-    // Flag whether the FTP client has logged (provided a username/password) or not yet.
-    bool isLoggedIn;
-    // The username that the FTP server expects.
-    QString userName;
-    // The password that the FTP server expects.
-    QString password;
-    QString rootPath;
+    QString _lastProcessedCommand;
+
+
+    QString _rootPath;
+
     // Flag for whether we should encrypt data connections.
-    bool encryptDataConnection;
-    DataConnection *dataConnection;
+    bool _encryptDataConnection;
+
+
+    // Flag whether the FTP client has logged (provided a username/password) or not yet.
+    bool _isLoggedIn;
+
     // Flag whether the client is allowed only read-only access (can download,
     // but not upload/modify).
-    bool readOnly;
+    bool _readOnly;
 };
 
 #endif // FTPCONTROLCONNECTION_H
