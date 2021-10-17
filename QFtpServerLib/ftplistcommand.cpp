@@ -6,44 +6,48 @@
 #include <QTimer>
 #include <QSslSocket>
 
-FtpListCommand::FtpListCommand(QObject *parent, const QString &fileName, bool nameListOnly) :
-    FtpCommand(parent)
-{
-    this->listDirectory = fileName;
-    this->nameListOnly = nameListOnly;
-}
+FtpListCommand::FtpListCommand(QObject *parent,
+                               const QString &fileName,
+                               bool nameListOnly)
+    : FtpCommand(parent)
+    , _listDirectory(fileName)
+    , _nameListOnly(nameListOnly)
+    , _timer(nullptr)
+    , _list(nullptr)
+    , _index(0)
+{}
 
 FtpListCommand::~FtpListCommand()
 {
-    if (started) {
+    if (_started) {
         emit reply("226 Closing data connection.");
     }
 }
 
 void FtpListCommand::startImplementation()
 {
-    QFileInfo info(listDirectory);
+    QFileInfo info(_listDirectory);
 
     if (!info.isReadable()) {
         emit reply("425 File or directory is not readable or doesn't exist.");
-        socket->disconnectFromHost();
+        _socket->disconnectFromHost();
         return;
     }
 
     emit reply("150 File status okay; about to open data connection.");
 
-    index = 0;
-    list = new QFileInfoList;
+    _index = 0;
+    _list = new QFileInfoList;
     if (!info.isDir()) {
-        *list = (QFileInfoList() << info);
+        *_list = (QFileInfoList() << info);
     } else {
-        *list = QDir(listDirectory).entryInfoList();
+        *_list = QDir(_listDirectory).entryInfoList();
     }
 
     // Start the timer.
-    timer = new QTimer(this);
-    connect(timer, SIGNAL(timeout()), this, SLOT(listNextBatch()));
-    timer->start(0);
+    _timer = new QTimer(this);
+    connect(_timer, SIGNAL(timeout()), this, SLOT(listNextBatch()));
+    _timer->start(0);
 }
 
 QString padded(QString s, int n)
@@ -61,7 +65,7 @@ QString FtpListCommand::fileListingString(const QFileInfo &fi)
     // drwxr-xr-x    9 ftp      ftp          4096 Nov 17  2009 pub
 
     QString line;
-    if (!nameListOnly) {
+    if (!_nameListOnly) {
         // Directory/symlink/file.
         if (fi.isSymLink()) {
             line += 'l';
@@ -114,17 +118,17 @@ QString FtpListCommand::fileListingString(const QFileInfo &fi)
 void FtpListCommand::listNextBatch()
 {
     // List next 10 items.
-    int stop = qMin(index + 10, list->size());
-    while (index < stop) {
-        QString line = fileListingString(list->at(index));
-        socket->write(line.toUtf8());
-        index++;
+    int stop = qMin(_index + 10, _list->size());
+    while (_index < stop) {
+        QString line = fileListingString(_list->at(_index));
+        _socket->write(line.toUtf8());
+        _index++;
     }
 
     // If all files have been listed, then finish.
-    if (list->size() == stop) {
-        delete list;
-        timer->stop();
-        socket->disconnectFromHost();
+    if (_list->size() == stop) {
+        delete _list;
+        _timer->stop();
+        _socket->disconnectFromHost();
     }
 }

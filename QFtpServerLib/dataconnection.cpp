@@ -3,55 +3,60 @@
 #include "ftpcommand.h"
 #include <QSslSocket>
 
-DataConnection::DataConnection(QObject *parent) :
-    QObject(parent)
+DataConnection::DataConnection(QObject *parent)
+    : QObject(parent)
+    , _server(new SslServer(this))
+    , _socket(nullptr)
+    , _command()
+    , _hostName()
+    , _port(0)
+    , _isSocketReady(false)
+    , _isWaitingForFtpCommand(false)
+    , _encrypt(false)
+    , _isActiveConnection(false)
 {
-    server = new SslServer(this);
-    connect(server, SIGNAL(newConnection()), this, SLOT(newConnection()));
-    socket = 0;
-    isSocketReady = false;
-    isWaitingForFtpCommand = false;
+    connect(_server, SIGNAL(newConnection()), this, SLOT(newConnection()));
 }
 
 void DataConnection::scheduleConnectToHost(const QString &hostName, int port, bool encrypt)
 {
-    this->encrypt = encrypt;
-    delete socket;
-    this->hostName = hostName;
-    this->port = port;
-    isSocketReady = false;
-    isWaitingForFtpCommand = true;
-    isActiveConnection = true;
+    this->_encrypt = encrypt;
+    delete _socket;
+    this->_hostName = hostName;
+    this->_port = port;
+    _isSocketReady = false;
+    _isWaitingForFtpCommand = true;
+    _isActiveConnection = true;
 }
 
 int DataConnection::listen(bool encrypt)
 {
-    this->encrypt = encrypt;
-    delete socket;
-    socket = 0;
-    delete command;
-    command = 0;
-    isSocketReady = false;
-    isWaitingForFtpCommand = true;
-    isActiveConnection = false;
-    server->close();
-    server->listen();
-    return server->serverPort();
+    this->_encrypt = encrypt;
+    delete _socket;
+    _socket = 0;
+    delete _command;
+    _command = 0;
+    _isSocketReady = false;
+    _isWaitingForFtpCommand = true;
+    _isActiveConnection = false;
+    _server->close();
+    _server->listen();
+    return _server->serverPort();
 }
 
 bool DataConnection::setFtpCommand(FtpCommand *command)
 {
-    if (!isWaitingForFtpCommand) {
+    if (!_isWaitingForFtpCommand) {
         return false;
     }
-    isWaitingForFtpCommand = false;
-    this->command = command;
+    _isWaitingForFtpCommand = false;
+    this->_command = command;
     command->setParent(this);
 
-    if (isActiveConnection) {
-        socket = new QSslSocket(this);
-        connect(socket, SIGNAL(connected()), SLOT(connected()));
-        socket->connectToHost(hostName, port);
+    if (_isActiveConnection) {
+        _socket = new QSslSocket(this);
+        connect(_socket, SIGNAL(connected()), SLOT(connected()));
+        _socket->connectToHost(_hostName, _port);
     } else {
         startFtpCommand();
     }
@@ -60,20 +65,20 @@ bool DataConnection::setFtpCommand(FtpCommand *command)
 
 FtpCommand *DataConnection::ftpCommand()
 {
-    if (isSocketReady) {
-        return command;
+    if (_isSocketReady) {
+        return _command;
     }
     return 0;
 }
 
 void DataConnection::newConnection()
 {
-    socket = (QSslSocket *) server->nextPendingConnection();
-    server->close();
-    if (encrypt) {
-        connect(socket, SIGNAL(encrypted()), this, SLOT(encrypted()));
-        SslServer::setLocalCertificateAndPrivateKey(socket);
-        socket->startServerEncryption();
+    _socket = (QSslSocket *) _server->nextPendingConnection();
+    _server->close();
+    if (_encrypt) {
+        connect(_socket, SIGNAL(encrypted()), this, SLOT(encrypted()));
+        SslServer::setLocalCertificateAndPrivateKey(_socket);
+        _socket->startServerEncryption();
     } else {
         encrypted();
     }
@@ -81,16 +86,16 @@ void DataConnection::newConnection()
 
 void DataConnection::encrypted()
 {
-    isSocketReady = true;
+    _isSocketReady = true;
     startFtpCommand();
 }
 
 void DataConnection::connected()
 {
-    if (encrypt) {
-        connect(socket, SIGNAL(encrypted()), this, SLOT(encrypted()));
-        SslServer::setLocalCertificateAndPrivateKey(socket);
-        socket->startServerEncryption();
+    if (_encrypt) {
+        connect(_socket, SIGNAL(encrypted()), this, SLOT(encrypted()));
+        SslServer::setLocalCertificateAndPrivateKey(_socket);
+        _socket->startServerEncryption();
     } else {
         encrypted();
     }
@@ -98,8 +103,8 @@ void DataConnection::connected()
 
 void DataConnection::startFtpCommand()
 {
-    if (command && isSocketReady) {
-        command->start(socket);
-        socket = 0;
+    if (_command && _isSocketReady) {
+        _command->start(_socket);
+        _socket = 0;
     }
 }

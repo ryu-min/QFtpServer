@@ -21,8 +21,10 @@ public:
 
 protected:
     virtual void startImplementation() = 0;
-    QSslSocket* socket;
-    bool started;
+
+protected:
+    QSslSocket* _socket;
+    bool _started;
 };
 
 #endif // FTPCOMMAND_H

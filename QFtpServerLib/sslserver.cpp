@@ -5,8 +5,7 @@
 
 SslServer::SslServer(QObject *parent) :
     QTcpServer(parent)
-{
-}
+{}
 
 void SslServer::setLocalCertificateAndPrivateKey(QSslSocket *socket)
 {

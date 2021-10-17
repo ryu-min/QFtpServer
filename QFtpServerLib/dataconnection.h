@@ -26,21 +26,19 @@ public:
 
     // Connects to a host. Any existing data connections
     // or commands are aborted.
-    void scheduleConnectToHost(const QString &hostName, int port, bool encrypt);
+    void scheduleConnectToHost(const QString &_hostName, int _port, bool _encrypt);
 
     // Starts listening for new data connections. Any existing data connections
     // or commands are aborted.
-    int listen(bool encrypt);
+    int listen(bool _encrypt);
 
     // Sets the ftp command. This function can be called only once after each
     // call of listen().
-    bool setFtpCommand(FtpCommand *command);
+    bool setFtpCommand(FtpCommand *_command);
 
     // Returns the currently running ftpCommand, if it is already running, but
     // not yet finished. Otherwise returns 0.
     FtpCommand *ftpCommand();
-
-signals:
 
 private slots:
     void newConnection();
@@ -49,17 +47,18 @@ private slots:
 
 private:
     void startFtpCommand();
-    SslServer *server;
-    QSslSocket *socket;
-    QPointer<FtpCommand> command;
-    bool isSocketReady;
-    bool isWaitingForFtpCommand;
-    bool encrypt;
 
-    // Used for the active data connection (PORT command).
-    bool isActiveConnection;
-    QString hostName;
-    int port;
+private:
+    SslServer *_server;
+    QSslSocket *_socket;
+    QPointer<FtpCommand> _command;
+    QString _hostName;
+    int _port;
+    bool _isSocketReady;
+    bool _isWaitingForFtpCommand;
+    bool _encrypt;
+    bool _isActiveConnection;
+
 };
 
 #endif // PASSIVEDATACONNECTION_H

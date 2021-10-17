@@ -6,29 +6,36 @@
 #include <QNetworkInterface>
 #include <QSslSocket>
 
-FtpServer::FtpServer(QObject *parent, const QString &rootPath, int port, const QString &userName, const QString &password, bool readOnly, bool onlyOneIpAllowed) :
-    QObject(parent)
+FtpServer::FtpServer(QObject *parent,
+                     const QString &rootPath,
+                     int port,
+                     const QString &userName,
+                     const QString &password,
+                     bool readOnly,
+                     bool onlyOneIpAllowed)
+    : QObject(parent)
+    , _server(new SslServer(this))
+    , _userName(userName)
+    , _password(password)
+    , _rootPath(rootPath)
+    , _encounteredIps()
+    , _readOnly(readOnly)
+    , _onlyOneIpAllowed(onlyOneIpAllowed)
 {
-    server = new SslServer(this);
     // In Qt4, QHostAddress::Any listens for IPv4 connections only, but as of
     // Qt5, it now listens on all available interfaces, and
     // QHostAddress::AnyIPv4 needs to be used if we want only IPv4 connections.
 #if QT_VERSION >= 0x050000
-    server->listen(QHostAddress::AnyIPv4, port);
+    _server->listen(QHostAddress::AnyIPv4, port);
 #else
-    server->listen(QHostAddress::Any, port);
+    _server->listen(QHostAddress::Any, port);
 #endif
-    connect(server, SIGNAL(newConnection()), this, SLOT(startNewControlConnection()));
-    this->userName = userName;
-    this->password = password;
-    this->rootPath = rootPath;
-    this->readOnly = readOnly;
-    this->onlyOneIpAllowed = onlyOneIpAllowed;
+    connect(_server, SIGNAL(newConnection()), this, SLOT(startNewControlConnection()));
 }
 
 bool FtpServer::isListening()
 {
-    return server->isListening();
+    return _server->isListening();
 }
 
 QString FtpServer::lanIp()
@@ -43,23 +50,23 @@ QString FtpServer::lanIp()
 
 void FtpServer::startNewControlConnection()
 {
-    QSslSocket *socket = (QSslSocket *) server->nextPendingConnection();
+    QSslSocket *socket = (QSslSocket *) _server->nextPendingConnection();
 
     // If this is not a previously encountered IP emit the newPeerIp signal.
     QString peerIp = socket->peerAddress().toString();
     qDebug() << "connection from" << peerIp;
-    if (!encounteredIps.contains(peerIp)) {
+    if (!_encounteredIps.contains(peerIp)) {
         // If we don't allow more than one IP for the client, we close
         // that connection.
-        if (onlyOneIpAllowed && !encounteredIps.isEmpty()) {
+        if (_onlyOneIpAllowed && !_encounteredIps.isEmpty()) {
             delete socket;
             return;
         }
 
         emit newPeerIp(peerIp);
-        encounteredIps.insert(peerIp);
+        _encounteredIps.insert(peerIp);
     }
 
     // Create a new FTP control connection on this socket.
-    new FtpControlConnection(this, socket, rootPath, userName, password, readOnly);
+    new FtpControlConnection(this, socket, _rootPath, _userName, _password, _readOnly);
 }
