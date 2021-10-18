@@ -8,11 +8,13 @@ class QFile;
 // Implements the STOR and APPE commands. Used to upload files to the ftp
 // server.
 
+BEGIN_FTP_NAMESPACE
+
 class FtpStorCommand : public FtpCommand
 {
     Q_OBJECT
 public:
-    explicit FtpStorCommand(QObject *parent, const QString &fileName, bool appendMode = false, qint64 seekTo = 0);
+    explicit FtpStorCommand(QObject *parent, const QString &_fileName, bool _appendMode = false, qint64 _seekTo = 0);
     ~FtpStorCommand();
 
 private slots:
@@ -21,11 +23,13 @@ private slots:
 private:
     void startImplementation();
 
-    QString fileName;
-    QFile *file;
-    bool appendMode;
-    qint64 seekTo;
-    bool success;
+    QString  _fileName;
+    QFile    *_file;
+    bool    _appendMode;
+    qint64  _seekTo;
+    bool    _success;
 };
+
+END_FTP_NAMESPACE
 
 #endif // FTPSTORCOMMAND_H

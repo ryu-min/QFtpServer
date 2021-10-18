@@ -2,16 +2,19 @@
 #define FTPRETRCOMMAND_H
 
 #include "ftpcommand.h"
+#include <qftpserverlib_global.h>
 
 class QFile;
 
 // Implements the RETR command. Used to download files from the ftp server.
 
+BEGIN_FTP_NAMESPACE
+
 class FtpRetrCommand : public FtpCommand
 {
     Q_OBJECT
 public:
-    explicit FtpRetrCommand(QObject *parent, const QString &fileName, qint64 seekTo = 0);
+    explicit FtpRetrCommand(QObject *parent, const QString &_fileName, qint64 _seekTo = 0);
     ~FtpRetrCommand();
 
 private slots:
@@ -20,9 +23,11 @@ private slots:
 private:
     void startImplementation();
 
-    QString fileName;
-    QFile *file;
-    qint64 seekTo;
+    QString _fileName;
+    qint64  _seekTo;
+    QFile * _file;
 };
+
+END_FTP_NAMESPACE
 
 #endif // FTPRETRCOMMAND_H

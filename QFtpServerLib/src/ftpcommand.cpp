@@ -2,17 +2,21 @@
 
 #include <QSslSocket>
 
-FtpCommand::FtpCommand(QObject *parent) :
-    QObject(parent)
-{
-    started = false;
-}
+BEGIN_FTP_NAMESPACE
+
+FtpCommand::FtpCommand(QObject *parent)
+    : QObject(parent)
+    , _socket(nullptr)
+    , _started(false)
+{}
 
 void FtpCommand::start(QSslSocket *socket)
 {
-    started = true;
-    this->socket = socket;
+    _started = true;
+    this->_socket = socket;
     socket->setParent(this);
     connect(socket, SIGNAL(disconnected()), this, SLOT(deleteLater()));
     startImplementation();
 }
+
+END_FTP_NAMESPACE

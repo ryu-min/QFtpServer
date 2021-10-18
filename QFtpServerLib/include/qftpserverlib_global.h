@@ -9,4 +9,8 @@
 #  define QFTPSERVERLIBSHARED_EXPORT Q_DECL_IMPORT
 #endif
 
+#define BEGIN_FTP_NAMESPACE namespace Ftp{
+#define END_FTP_NAMESPACE }
+
+
 #endif // QFTPSERVERLIB_GLOBAL_H

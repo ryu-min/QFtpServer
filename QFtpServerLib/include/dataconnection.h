@@ -1,9 +1,7 @@
 #ifndef PASSIVEDATACONNECTION_H
 #define PASSIVEDATACONNECTION_H
 
-class SslServer;
-class QSslSocket;
-class FtpCommand;
+#include <qftpserverlib_global.h>
 
 #include <QObject>
 #include <QPointer>
@@ -18,6 +16,13 @@ class FtpCommand;
 // have the command, and are connected to the client, and the connection has
 // been encrypted, we run the command.
 
+class QSslSocket;
+
+BEGIN_FTP_NAMESPACE
+
+class SslServer;
+class FtpCommand;
+
 class DataConnection : public QObject
 {
     Q_OBJECT
@@ -26,21 +31,19 @@ public:
 
     // Connects to a host. Any existing data connections
     // or commands are aborted.
-    void scheduleConnectToHost(const QString &hostName, int port, bool encrypt);
+    void scheduleConnectToHost(const QString &_hostName, int _port, bool _encrypt);
 
     // Starts listening for new data connections. Any existing data connections
     // or commands are aborted.
-    int listen(bool encrypt);
+    int listen(bool _encrypt);
 
     // Sets the ftp command. This function can be called only once after each
     // call of listen().
-    bool setFtpCommand(FtpCommand *command);
+    bool setFtpCommand(FtpCommand *_command);
 
     // Returns the currently running ftpCommand, if it is already running, but
     // not yet finished. Otherwise returns 0.
     FtpCommand *ftpCommand();
-
-signals:
 
 private slots:
     void newConnection();
@@ -49,17 +52,20 @@ private slots:
 
 private:
     void startFtpCommand();
-    SslServer *server;
-    QSslSocket *socket;
-    QPointer<FtpCommand> command;
-    bool isSocketReady;
-    bool isWaitingForFtpCommand;
-    bool encrypt;
 
-    // Used for the active data connection (PORT command).
-    bool isActiveConnection;
-    QString hostName;
-    int port;
+private:
+    SslServer *_server;
+    QSslSocket *_socket;
+    QPointer<FtpCommand> _command;
+    QString _hostName;
+    int _port;
+    bool _isSocketReady;
+    bool _isWaitingForFtpCommand;
+    bool _encrypt;
+    bool _isActiveConnection;
+
 };
+
+END_FTP_NAMESPACE
 
 #endif // PASSIVEDATACONNECTION_H

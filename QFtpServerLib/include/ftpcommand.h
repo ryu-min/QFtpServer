@@ -3,9 +3,13 @@
 
 #include <QObject>
 
+#include <qftpserverlib_global.h>
+
 class QSslSocket;
 
 // The base class for all FTP commands that need a data connection.
+
+BEGIN_FTP_NAMESPACE
 
 class FtpCommand : public QObject
 {
@@ -21,8 +25,12 @@ public:
 
 protected:
     virtual void startImplementation() = 0;
-    QSslSocket* socket;
-    bool started;
+
+protected:
+    QSslSocket* _socket;
+    bool _started;
 };
+
+END_FTP_NAMESPACE
 
 #endif // FTPCOMMAND_H

@@ -7,6 +7,9 @@
 #include <QSettings>
 #include <QFileDialog>
 #include <QIntValidator>
+#include <QIcon>
+
+using namespace Ftp;
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow)
