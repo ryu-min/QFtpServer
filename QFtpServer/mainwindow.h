@@ -7,7 +7,10 @@ namespace Ui {
     class MainWindow;
 }
 
-class FtpServer;
+namespace Ftp
+{
+    class FtpServer;
+}
 
 class MainWindow : public QMainWindow
 {
@@ -42,7 +45,7 @@ private:
     Ui::MainWindow *ui;
 
     // This is the FTP server object.
-    FtpServer *server;
+    Ftp::FtpServer *server;
 
     // Load the stored settings.
     void loadSettings();

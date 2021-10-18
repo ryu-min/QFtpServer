@@ -1,9 +1,7 @@
 #ifndef PASSIVEDATACONNECTION_H
 #define PASSIVEDATACONNECTION_H
 
-class SslServer;
-class QSslSocket;
-class FtpCommand;
+#include <qftpserverlib_global.h>
 
 #include <QObject>
 #include <QPointer>
@@ -17,6 +15,13 @@ class FtpCommand;
 // encryption enabled, the data connection is also first encrypted. Once we
 // have the command, and are connected to the client, and the connection has
 // been encrypted, we run the command.
+
+class QSslSocket;
+
+BEGIN_FTP_NAMESPACE
+
+class SslServer;
+class FtpCommand;
 
 class DataConnection : public QObject
 {
@@ -60,5 +65,7 @@ private:
     bool _isActiveConnection;
 
 };
+
+END_FTP_NAMESPACE
 
 #endif // PASSIVEDATACONNECTION_H

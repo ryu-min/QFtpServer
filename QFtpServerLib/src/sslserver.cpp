@@ -3,6 +3,8 @@
 #include <QSslSocket>
 #include <QSslKey>
 
+BEGIN_FTP_NAMESPACE
+
 SslServer::SslServer(QObject *parent) :
     QTcpServer(parent)
 {}
@@ -24,3 +26,5 @@ void SslServer::incomingConnection(PortableSocketDescriptorType socketDescriptor
         delete socket;
     }
 }
+
+END_FTP_NAMESPACE

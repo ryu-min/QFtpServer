@@ -3,12 +3,16 @@
 
 #include <QTcpServer>
 
+#include <qftpserverlib_global.h>
+
 class QSslSocket;
 
 // A simple SSL server. Returns a QSslSocket instead of a QTcpSocket, but
 // started in unencrypted mode, so it can be used as a regular QTcpServer, as
 // well. The QSslSockets are loaded with a default certificate coming from the
 // resource files.
+
+BEGIN_FTP_NAMESPACE
 
 class SslServer : public QTcpServer
 {
@@ -37,5 +41,7 @@ private:
 
     void incomingConnection(PortableSocketDescriptorType socketDescriptor);
 };
+
+END_FTP_NAMESPACE
 
 #endif // SSLSERVER_H

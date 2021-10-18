@@ -15,6 +15,8 @@
 #include <QTimer>
 #include <QSslSocket>
 
+BEGIN_FTP_NAMESPACE
+
 FtpControlConnection::FtpControlConnection(QObject *parent,
                                            QSslSocket *socket,
                                            const QString &rootPath,
@@ -431,3 +433,5 @@ qint64 FtpControlConnection::seekTo()
     }
     return seekTo;
 }
+
+END_FTP_NAMESPACE

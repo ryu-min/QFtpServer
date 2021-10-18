@@ -2,6 +2,8 @@
 #include <QFile>
 #include <QSslSocket>
 
+BEGIN_FTP_NAMESPACE
+
 FtpRetrCommand::FtpRetrCommand(QObject *parent,
                                const QString &fileName,
                                qint64 seekTo)
@@ -53,3 +55,5 @@ void FtpRetrCommand::refillSocketBuffer(qint64 bytes)
         _socket->disconnectFromHost();
     }
 }
+
+END_FTP_NAMESPACE

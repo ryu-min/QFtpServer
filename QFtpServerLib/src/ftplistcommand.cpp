@@ -6,6 +6,8 @@
 #include <QTimer>
 #include <QSslSocket>
 
+BEGIN_FTP_NAMESPACE
+
 FtpListCommand::FtpListCommand(QObject *parent,
                                const QString &fileName,
                                bool nameListOnly)
@@ -132,3 +134,5 @@ void FtpListCommand::listNextBatch()
         _socket->disconnectFromHost();
     }
 }
+
+END_FTP_NAMESPACE

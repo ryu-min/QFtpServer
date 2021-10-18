@@ -2,6 +2,7 @@
 #define FTPLISTCOMMAND_H
 
 #include "ftpcommand.h"
+#include <qftpserverlib_global.h>
 
 class QTimer;
 class QFileInfo;
@@ -10,6 +11,8 @@ typedef QList<QFileInfo> QFileInfoList;
 
 // Implements the LIST command. Prints out a listing of the given directory, in
 // the same format as the unix 'ls -l' command.
+
+BEGIN_FTP_NAMESPACE
 
 class FtpListCommand : public FtpCommand
 {
@@ -32,5 +35,7 @@ private:
     QFileInfoList *_list;
     int _index;
 };
+
+END_FTP_NAMESPACE
 
 #endif // FTPLISTCOMMAND_H

@@ -2,6 +2,8 @@
 
 #include <QSslSocket>
 
+BEGIN_FTP_NAMESPACE
+
 FtpCommand::FtpCommand(QObject *parent)
     : QObject(parent)
     , _socket(nullptr)
@@ -16,3 +18,5 @@ void FtpCommand::start(QSslSocket *socket)
     connect(socket, SIGNAL(disconnected()), this, SLOT(deleteLater()));
     startImplementation();
 }
+
+END_FTP_NAMESPACE

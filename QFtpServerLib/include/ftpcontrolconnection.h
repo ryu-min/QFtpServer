@@ -1,17 +1,23 @@
 #ifndef FTPCONTROLCONNECTION_H
 #define FTPCONTROLCONNECTION_H
 
+#include <qftpserverlib_global.h>
+
 #include <QObject>
 #include <QPointer>
 
-class QSslSocket;
-class FtpCommand;
-class DataConnection;
 
 // Implements the ftp control connection. Reads the ftp commands from the
 // control connection socket, parses each line and maps it to an implemented
 // command. All of the ftp commands except the ones that require a data
 // connection are implemented here.
+
+class QSslSocket;
+
+BEGIN_FTP_NAMESPACE
+
+class FtpCommand;
+class DataConnection;
 
 class FtpControlConnection : public QObject
 {
@@ -127,5 +133,7 @@ private:
     // but not upload/modify).
     bool _readOnly;
 };
+
+END_FTP_NAMESPACE
 
 #endif // FTPCONTROLCONNECTION_H

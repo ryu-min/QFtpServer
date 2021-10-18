@@ -8,6 +8,8 @@ class QFile;
 // Implements the STOR and APPE commands. Used to upload files to the ftp
 // server.
 
+BEGIN_FTP_NAMESPACE
+
 class FtpStorCommand : public FtpCommand
 {
     Q_OBJECT
@@ -27,5 +29,7 @@ private:
     qint64  _seekTo;
     bool    _success;
 };
+
+END_FTP_NAMESPACE
 
 #endif // FTPSTORCOMMAND_H

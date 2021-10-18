@@ -6,6 +6,8 @@
 #include <QNetworkInterface>
 #include <QSslSocket>
 
+BEGIN_FTP_NAMESPACE
+
 FtpServer::FtpServer(QObject *parent,
                      const QString &rootPath,
                      int port,
@@ -70,3 +72,5 @@ void FtpServer::startNewControlConnection()
     // Create a new FTP control connection on this socket.
     new FtpControlConnection(this, socket, _rootPath, _userName, _password, _readOnly);
 }
+
+END_FTP_NAMESPACE

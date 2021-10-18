@@ -5,10 +5,12 @@
 #include <QSet>
 #include <qftpserverlib_global.h>
 
-class SslServer;
-
 // The ftp server. Listens on a port, and starts a new control connection each
 // time it gets connected.
+
+BEGIN_FTP_NAMESPACE
+
+class SslServer;
 
 class QFTPSERVERLIBSHARED_EXPORT FtpServer : public QObject
 {
@@ -66,5 +68,7 @@ private:
     // phone is unlikely to be used from 2 places at once.
     bool _onlyOneIpAllowed;
 };
+
+END_FTP_NAMESPACE
 
 #endif // FTPSERVER_H

@@ -2,6 +2,8 @@
 #include <QFile>
 #include <QSslSocket>
 
+BEGIN_FTP_NAMESPACE
+
 FtpStorCommand::FtpStorCommand(QObject *parent,
                                const QString &fileName,
                                bool appendMode,
@@ -50,3 +52,5 @@ void FtpStorCommand::acceptNextBlock()
         deleteLater();
     }
 }
+
+END_FTP_NAMESPACE

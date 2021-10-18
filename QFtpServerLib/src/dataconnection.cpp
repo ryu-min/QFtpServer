@@ -3,6 +3,8 @@
 #include "ftpcommand.h"
 #include <QSslSocket>
 
+BEGIN_FTP_NAMESPACE
+
 DataConnection::DataConnection(QObject *parent)
     : QObject(parent)
     , _server(new SslServer(this))
@@ -108,3 +110,5 @@ void DataConnection::startFtpCommand()
         _socket = 0;
     }
 }
+
+END_FTP_NAMESPACE
